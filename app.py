@@ -18,7 +18,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 graph = Neo4jGraph(url=NEO4J_URI, username=NEO4J_USERNAME, password=NEO4J_PASSWORD)
 
 # Initialize ChatGroq model
-llm = ChatGroq(groq_api_key=groq_api_key, model_name="Gemma2-9b-It")
+llm = ChatGroq(groq_api_key=GROQ_API_KEY, model_name="Gemma2-9b-It")
 
 # Create the QA chain
 chain = GraphCypherQAChain.from_llm(graph=graph, llm=llm, verbose=True)
