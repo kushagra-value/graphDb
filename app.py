@@ -8,13 +8,11 @@ import os
 # Load environment variables
 load_dotenv()
 
-# Set up Neo4j connection details
-NEO4J_URI = "neo4j+s://e108e955.databases.neo4j.io"
-NEO4J_USERNAME = "neo4j"
-NEO4J_PASSWORD = "iCcYTVGFCGvZtj3SxIixrvwyYtU5XeawwlNJUs86Md0"
-
-# Set up ChatGroq API key
-groq_api_key = "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"
+load_dotenv()
+NEO4J_URI = os.getenv("NEO4J_URI")
+NEO4J_USERNAME = os.getenv("NEO4J_USERNAME")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Initialize Neo4j graph
 graph = Neo4jGraph(url=NEO4J_URI, username=NEO4J_USERNAME, password=NEO4J_PASSWORD)
