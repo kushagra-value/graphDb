@@ -14,7 +14,7 @@ NEO4J_USERNAME = "neo4j"
 NEO4J_PASSWORD = "iCcYTVGFCGvZtj3SxIixrvwyYtU5XeawwlNJUs86Md0"
 
 # Set up ChatGroq API key
-groq_api_key = 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
+groq_api_key = "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"
 
 # Initialize Neo4j graph
 graph = Neo4jGraph(url=NEO4J_URI, username=NEO4J_USERNAME, password=NEO4J_PASSWORD)
