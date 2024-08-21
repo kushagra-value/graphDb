@@ -1,74 +1,42 @@
 import streamlit as st
-from langchain_community.retrievers import PineconeHybridSearchRetriever
-from pinecone import Pinecone, ServerlessSpec
-from pinecone_text.sparse import BM25Encoder
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.graphs import Neo4jGraph
+from langchain_groq import ChatGroq
+from langchain.chains import GraphCypherQAChain
 from dotenv import load_dotenv
 import os
-
-import nltk
-nltk.download('punkt')
-nltk.download('punkt_tab')
 
 # Load environment variables
 load_dotenv()
 
-# Pinecone API Key (For demo purposes, it is hardcoded. Replace with a secure method in production)
-api_key = os.getenv("API_KEY")
+load_dotenv()
+NEO4J_URI = os.getenv("NEO4J_URI")
+NEO4J_USERNAME = os.getenv("NEO4J_USERNAME")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Initialize Pinecone client
-pc = Pinecone(api_key=api_key)
-index_name = "hybrid-search-langchain-pinecone"
+# Initialize Neo4j graph
+graph = Neo4jGraph(url=NEO4J_URI, username=NEO4J_USERNAME, password=NEO4J_PASSWORD)
 
-# Create the Pinecone index if it does not exist
-if index_name not in pc.list_indexes().names():
-    pc.create_index(
-        name=index_name,
-        dimension=384,  # dimensionality of dense model
-        metric="dotproduct",  # sparse values supported only for dotproduct
-        spec=ServerlessSpec(cloud="aws", region="us-east-1"),
-    )
+# Initialize ChatGroq model
+llm = ChatGroq(groq_api_key=GROQ_API_KEY, model_name="Gemma2-9b-It")
 
-# Load the index
-index = pc.Index(index_name)
+# Create the QA chain
+chain = GraphCypherQAChain.from_llm(graph=graph, llm=llm, verbose=True)
 
-# Initialize embeddings and BM25 encoder
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-bm25_encoder = BM25Encoder().default()
+# Streamlit app layout
+st.title("Graph Database Question Answering")
 
-# Create the retriever
-retriever = PineconeHybridSearchRetriever(embeddings=embeddings, sparse_encoder=bm25_encoder, index=index)
+# User input for the query
+query = st.text_input("Enter your question about the movie database:")
 
-# Streamlit UI
-st.title("Hybrid Search with LangChain & Pinecone")
+if query:
+    # Get the response from the QA chain
+    response = chain.invoke({"query": query})
+    
+    # Display the response
+    st.write("Response:")
+    st.write(response['result'])
 
-# Input query
-query = st.text_input("Enter your search query:")
-
-if st.button("Search"):
-    if query:
-        result = retriever.invoke(query)
-        if result:  # Check if the result is not empty
-            first_result = result[0]  # Get the first result from the list
-            st.write("**Search Result:**", first_result)
-        else:
-            st.write("No results found.")
-    else:
-        st.write("Please enter a query to search.")
-
-# Optionally, add texts to the retriever
-st.subheader("Add Sample Texts")
-
-# Text input for adding new texts
-sample_texts_input = st.text_area("Enter your sample texts, one per line:")
-
-if st.button("Add Texts"):
-    if sample_texts_input:
-        texts = [line.strip() for line in sample_texts_input.split('\n') if line.strip()]
-        retriever.add_texts(texts)
-        st.write(f"{len(texts)} sample texts added to the retriever.")
-    else:
-        st.write("Please enter some texts to add.")
-
-if __name__ == "__main__":
-    st.write("Streamlit app is running...")
+    # Optionally, show the generated Cypher query
+    st.write("Generated Cypher Query:")
+    st.write(response.get('generated_cypher', 'No Cypher query generated.'))
